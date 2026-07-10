@@ -161,9 +161,10 @@ app.get('/api/images', async (request, response) => {
 });
 
 app.post('/api/generate-review', async (request, response) => {
-  const { highlight, detail = '', rating, selected_image_paths = [], regenerate = false } = request.body || {};
-  const numericRating = Number(rating);
-  const imagePaths = Array.isArray(selected_image_paths) ? [...new Set(selected_image_paths)].slice(0, 3) : [];
+  let { highlight, detail = '', rating, selected_image_paths = [], regenerate = false } = request.body || {};
+  let numericRating = Number(rating);
+  let imagePaths = Array.isArray(selected_image_paths) ? [...new Set(selected_image_paths)].slice(0, 3) : [];
+  const requestedReviewId = Number(request.body?.review_id);
 
   if (!allowedHighlights.has(highlight) || !Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
     response.status(400).json({ error: '问卷数据不完整或格式不正确' });
@@ -176,6 +177,29 @@ app.post('/api/generate-review', async (request, response) => {
   if (!openai) {
     response.status(503).json({ error: '服务端尚未配置 DEEPSEEK_API_KEY，请先填写 .env' });
     return;
+  }
+
+  let reviewId = null;
+  if (regenerate) {
+    if (!Number.isInteger(requestedReviewId) || requestedReviewId < 1) {
+      response.status(400).json({ error: '缺少原始评价标识，无法重新生成' });
+      return;
+    }
+    const [existingReview] = await all(`SELECT id, highlight, detail, rating, selected_image_paths
+      FROM reviews WHERE id = ?`, [requestedReviewId]);
+    if (!existingReview) {
+      response.status(404).json({ error: '原始评价不存在，请返回重新提交' });
+      return;
+    }
+    reviewId = existingReview.id;
+    highlight = existingReview.highlight;
+    detail = existingReview.detail || '';
+    numericRating = existingReview.rating;
+    try {
+      imagePaths = JSON.parse(existingReview.selected_image_paths || '[]');
+    } catch {
+      imagePaths = [];
+    }
   }
 
   const userMessage = `店铺名称：至尊披萨
@@ -199,6 +223,12 @@ app.post('/api/generate-review', async (request, response) => {
     const content = completion.choices?.[0]?.message?.content?.trim();
     if (!content) throw new Error('DeepSeek 返回内容为空');
 
+    if (regenerate) {
+      await run('UPDATE reviews SET generated_content = ? WHERE id = ?', [content, reviewId]);
+      response.json({ branch: 'review', review: content, review_id: reviewId, selected_image_paths: imagePaths });
+      return;
+    }
+
     if (imagePaths.length) {
       const placeholders = imagePaths.map(() => '?').join(',');
       const available = await all(`SELECT image_path FROM images WHERE status = 'available' AND image_path IN (${placeholders})`, imagePaths);
@@ -212,10 +242,10 @@ app.post('/api/generate-review', async (request, response) => {
     for (const imagePath of imagePaths) {
       await run(`UPDATE images SET status = 'cooling', last_used_at = ? WHERE image_path = ? AND status = 'available'`, [now, imagePath]);
     }
-    await run(`INSERT INTO reviews (highlight, detail, rating, generated_content, selected_image_paths) VALUES (?, ?, ?, ?, ?)`, [
+    const reviewRecord = await run(`INSERT INTO reviews (highlight, detail, rating, generated_content, selected_image_paths) VALUES (?, ?, ?, ?, ?)`, [
       highlight, String(detail).trim(), numericRating, content, JSON.stringify(imagePaths)
     ]);
-    response.json({ branch: 'review', review: content, selected_image_paths: imagePaths });
+    response.json({ branch: 'review', review: content, review_id: reviewRecord.lastID, selected_image_paths: imagePaths });
   } catch (error) {
     console.error('生成评价失败:', error.message);
     response.status(502).json({ error: '评价生成失败，请稍后重试' });
