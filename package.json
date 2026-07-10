@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "node dev-server.mjs",
+    "start": "node dev-server.mjs",
     "seed:images": "node seed-images.js",
     "reset:images": "node reset-images.js"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "multer": "^2.2.0",
     "openai": "^6.46.0",
     "sqlite3": "^6.0.1"
   }

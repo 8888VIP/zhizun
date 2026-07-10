@@ -220,7 +220,7 @@
       showResult(`<div class="rounded-[28px] bg-white p-10 text-center shadow-warm"><div class="loader mx-auto mb-5"></div><p class="text-base font-bold">${message}</p><p class="mt-2 text-sm text-stone-400">请稍等一下</p></div>`);
     }
 
-    function showPrivateFeedback() {
+    function showPrivateFeedback(rating) {
       showResult(`<div class="rounded-[28px] bg-white p-6 shadow-warm sm:p-8"><div class="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-3xl">🫶</div><p class="mb-2 text-sm font-semibold text-pizza-600">我们想认真听听你的感受</p><h2 class="text-2xl font-bold leading-tight">非常抱歉这次体验没有达到你的期待</h2><p class="mt-3 text-sm leading-6 text-stone-500">可以再多告诉我们一些吗？我们会认真改进。</p><form id="private-form" class="mt-6 space-y-4"><textarea required rows="6" placeholder="请告诉我们具体遇到了什么问题……" class="w-full resize-none rounded-2xl border-2 border-stone-100 bg-stone-50 px-4 py-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-pizza-400 focus:bg-white"></textarea><p id="private-error" class="hidden rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600"></p><button class="w-full rounded-2xl bg-pizza-500 px-5 py-4 text-base font-bold text-white shadow-lg shadow-orange-200 transition hover:bg-pizza-600">提交私密反馈</button></form></div>`);
       document.querySelector('#private-form').addEventListener('submit', async (privateEvent) => {
         privateEvent.preventDefault();
@@ -231,7 +231,7 @@
         submitButton.disabled = true;
         submitButton.textContent = '正在提交…';
         try {
-          const response = await fetch('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feedback_content: feedback }) });
+          const response = await fetch('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feedback_content: feedback, rating }) });
           const data = await response.json();
           if (!response.ok) throw new Error(data.error || '提交失败');
           showResult(`<div class="rounded-[28px] bg-white p-8 text-center shadow-warm"><div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-50 text-3xl">✓</div><h2 class="text-2xl font-bold">感谢你的真实反馈！</h2><p class="mt-3 text-sm leading-7 text-stone-500">我们已经收到，店长会认真查看并改进。<br />期待你下次光临至尊披萨 🍕</p></div>`);
@@ -285,7 +285,7 @@
         const response = await fetch('/api/generate-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ highlight, detail, rating, selected_image_paths: selectedImagePaths }) });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || '提交失败');
-        if (data.branch === 'private-feedback') showPrivateFeedback();
+        if (data.branch === 'private-feedback') showPrivateFeedback(rating);
         else renderReviewResult(data.review, data.selected_image_paths || selectedImagePaths, highlight, detail, rating);
       } catch (submitError) {
         showResult(`<div class="rounded-[28px] bg-white p-8 text-center shadow-warm"><div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-3xl">!</div><h2 class="text-xl font-bold">暂时无法提交</h2><p class="mt-3 text-sm leading-7 text-stone-500">${submitError.message}</p><button onclick="location.reload()" class="mt-5 rounded-2xl bg-pizza-500 px-5 py-3 font-bold text-white">返回重试</button></div>`);

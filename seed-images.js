@@ -1,8 +1,7 @@
 import { readdir } from 'node:fs/promises';
-import { extname, join } from 'node:path';
-import { db, dbReady, projectRoot, run } from './db.mjs';
+import { extname } from 'node:path';
+import { db, dbReady, imageDir, run } from './db.mjs';
 
-const imageDir = join(projectRoot, 'public', 'images');
 const imageExtensions = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg']);
 await dbReady;
 const files = (await readdir(imageDir, { withFileTypes: true }))
