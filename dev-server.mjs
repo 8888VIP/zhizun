@@ -246,4 +246,4 @@ app.use((error, _request, response, _next) => {
 });
 
 await dbReady;
-app.listen(port, () => console.log(`Pizza review assistant running at http://localhost:${port}`));
+app.listen(port, '0.0.0.0', () => console.log(`Pizza review assistant running on 0.0.0.0:${port}`));

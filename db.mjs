@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import sqlite3 from 'sqlite3';
 import { mkdir } from 'node:fs/promises';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
