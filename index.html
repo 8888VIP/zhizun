@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>至尊披萨（洋湖荟聚店）</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pizza: { 50: '#fff7ed', 100: '#ffedd5', 500: '#f97316', 600: '#ea580c', 700: '#c2410c' },
+            ink: '#33231d'
+          },
+          boxShadow: { warm: '0 18px 50px rgba(194, 65, 12, 0.12)' }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { background: #fffaf5; color: #33231d; }
+    .page { min-height: 100svh; background: radial-gradient(circle at 95% 0%, #ffedd5 0, transparent 34%), #fffaf5; }
+    .choice-card input:checked + span { border-color: #f97316; background: #fff7ed; color: #c2410c; box-shadow: 0 0 0 3px rgba(249, 115, 22, .12); }
+    .image-card input:checked + div { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249, 115, 22, .12); }
+    .image-card.is-disabled { opacity: .42; cursor: not-allowed; }
+    .star-choice input:checked + span { color: #f97316; transform: translateY(-2px); }
+    .fade-in { animation: fade-in .32s ease-out both; }
+    @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .loader { width: 24px; height: 24px; border: 3px solid #fed7aa; border-top-color: #f97316; border-radius: 999px; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <main class="page px-4 py-6 sm:py-10">
+    <div class="mx-auto max-w-xl">
+      <header class="mb-6 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-pizza-500 text-2xl shadow-lg shadow-orange-200">🍕</div>
+          <div>
+            <p class="text-xs font-semibold tracking-[0.18em] text-pizza-700">SUPREME PIZZA</p>
+            <h1 class="text-lg font-bold">至尊披萨（洋湖荟聚店）</h1>
+          </div>
+        </div>
+        <span class="rounded-full bg-white px-3 py-1 text-xs text-stone-500 shadow-sm">真实体验反馈</span>
+      </header>
+
+      <section id="survey-view" class="fade-in rounded-[28px] bg-white p-5 shadow-warm sm:p-8">
+        <div class="mb-7">
+          <p class="mb-2 text-sm font-semibold text-pizza-600">感谢你的到店体验</p>
+          <h2 class="text-2xl font-bold leading-tight sm:text-3xl">花一分钟，告诉我们<br />今天吃得怎么样？</h2>
+          <p class="mt-3 text-sm leading-6 text-stone-500">你的真实感受对我们很重要，无论满意或不满意，我们都会认真看。</p>
+        </div>
+
+        <form id="survey-form" class="space-y-7" novalidate>
+          <div id="q1-step">
+          <fieldset>
+            <legend class="mb-3 text-base font-bold">Q1. 你觉得今天体验最好的是什么？<span class="ml-1 text-pizza-600">*</span></legend>
+            <div class="grid grid-cols-2 gap-3">
+              <label class="choice-card cursor-pointer"><input class="sr-only" type="radio" name="highlight" value="产品口味" /><span class="flex min-h-16 items-center justify-center rounded-2xl border-2 border-stone-100 bg-stone-50 px-3 text-center text-sm font-medium transition">🍕 产品口味</span></label>
+              <label class="choice-card cursor-pointer"><input class="sr-only" type="radio" name="highlight" value="服务态度" /><span class="flex min-h-16 items-center justify-center rounded-2xl border-2 border-stone-100 bg-stone-50 px-3 text-center text-sm font-medium transition">😊 服务态度</span></label>
+              <label class="choice-card cursor-pointer"><input class="sr-only" type="radio" name="highlight" value="用餐体验" /><span class="flex min-h-16 items-center justify-center rounded-2xl border-2 border-stone-100 bg-stone-50 px-3 text-center text-sm font-medium transition">✨ 用餐体验</span></label>
+              <label class="choice-card cursor-pointer"><input class="sr-only" type="radio" name="highlight" value="性价比" /><span class="flex min-h-16 items-center justify-center rounded-2xl border-2 border-stone-100 bg-stone-50 px-3 text-center text-sm font-medium transition">💰 性价比</span></label>
+              <label class="choice-card col-span-2 cursor-pointer"><input class="sr-only" type="radio" name="highlight" value="其他" /><span class="flex min-h-16 items-center justify-center rounded-2xl border-2 border-stone-100 bg-stone-50 px-3 text-center text-sm font-medium transition">💬 其他</span></label>
+            </div>
+          </fieldset>
+          </div>
+
+          <div id="image-step" class="hidden space-y-5">
+            <div>
+              <p class="mb-2 text-sm font-semibold text-pizza-600">请选择 1~3 张喜欢的图</p>
+              <h3 class="text-xl font-bold">为这次体验配一张照片吧</h3>
+              <p class="mt-2 text-sm text-stone-500">可以选择 1~3 张，不选也可以直接进入下一步。</p>
+            </div>
+            <div id="image-list" class="grid grid-cols-2 gap-3"></div>
+            <p id="image-selection-status" class="text-sm text-pizza-700"></p>
+            <p id="image-error" class="hidden rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600"></p>
+            <button id="image-next" type="button" class="w-full rounded-2xl bg-pizza-500 px-5 py-4 text-base font-bold text-white shadow-lg shadow-orange-200 transition hover:bg-pizza-600 active:scale-[.99]">继续填写体验</button>
+          </div>
+
+          <div id="details-step" class="hidden space-y-7">
+          <div>
+            <label for="detail" class="mb-3 block text-base font-bold">Q2. 有没有让你印象深刻的细节？</label>
+            <textarea id="detail" rows="4" maxlength="300" placeholder="比如某道披萨、某位服务员、某个瞬间……" class="w-full resize-none rounded-2xl border-2 border-stone-100 bg-stone-50 px-4 py-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-pizza-400 focus:bg-white"></textarea>
+          </div>
+
+          <fieldset>
+            <legend class="mb-3 text-base font-bold">Q3. 今天的整体满意度<span class="ml-1 text-pizza-600">*</span></legend>
+            <div class="flex justify-between rounded-2xl bg-stone-50 px-4 py-4 sm:px-8">
+              <label class="star-choice cursor-pointer text-center"><input class="sr-only" type="radio" name="rating" value="1" /><span class="block text-3xl text-stone-300 transition">★</span><small class="text-xs text-stone-400">1星</small></label>
+              <label class="star-choice cursor-pointer text-center"><input class="sr-only" type="radio" name="rating" value="2" /><span class="block text-3xl text-stone-300 transition">★</span><small class="text-xs text-stone-400">2星</small></label>
+              <label class="star-choice cursor-pointer text-center"><input class="sr-only" type="radio" name="rating" value="3" /><span class="block text-3xl text-stone-300 transition">★</span><small class="text-xs text-stone-400">3星</small></label>
+              <label class="star-choice cursor-pointer text-center"><input class="sr-only" type="radio" name="rating" value="4" /><span class="block text-3xl text-stone-300 transition">★</span><small class="text-xs text-stone-400">4星</small></label>
+              <label class="star-choice cursor-pointer text-center"><input class="sr-only" type="radio" name="rating" value="5" /><span class="block text-3xl text-stone-300 transition">★</span><small class="text-xs text-stone-400">5星</small></label>
+            </div>
+          </fieldset>
+
+          <p id="form-error" class="hidden rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600"></p>
+          <button type="submit" class="w-full rounded-2xl bg-pizza-500 px-5 py-4 text-base font-bold text-white shadow-lg shadow-orange-200 transition hover:bg-pizza-600 active:scale-[.99]">提交我的体验</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="result-view" class="hidden"></section>
+      <p class="mt-5 text-center text-xs text-stone-400">我们只记录你主动提交的反馈，用来改进每一次服务。</p>
+    </div>
+  </main>
+
+  <script>
+    const form = document.querySelector('#survey-form');
+    const surveyView = document.querySelector('#survey-view');
+    const resultView = document.querySelector('#result-view');
+    const error = document.querySelector('#form-error');
+    const q1Step = document.querySelector('#q1-step');
+    const imageStep = document.querySelector('#image-step');
+    const imageList = document.querySelector('#image-list');
+    const imageError = document.querySelector('#image-error');
+    const imageSelectionStatus = document.querySelector('#image-selection-status');
+    const imageNext = document.querySelector('#image-next');
+    const detailsStep = document.querySelector('#details-step');
+    let selectedImagePaths = [];
+
+    function showDetailsStep() {
+      imageStep.classList.add('hidden');
+      detailsStep.classList.remove('hidden');
+    }
+
+    function renderImages(images) {
+      selectedImagePaths = [];
+      imageError.classList.add('hidden');
+      imageList.innerHTML = images.map((image) => `
+        <label class="image-card cursor-pointer">
+          <input class="sr-only" type="checkbox" name="selected-image" value="${image.image_path}" />
+          <div class="overflow-hidden rounded-2xl border-2 border-stone-100 bg-white transition">
+            <img src="${image.image_path}" alt="至尊披萨${image.tag}图片" class="aspect-[4/3] w-full object-cover" />
+            <p class="px-3 py-2 text-center text-xs text-stone-500">选择这张图</p>
+          </div>
+        </label>`).join('');
+      imageList.querySelectorAll('input[name="selected-image"]').forEach((input) => {
+        input.addEventListener('change', () => {
+          selectedImagePaths = [...imageList.querySelectorAll('input[name="selected-image"]:checked')].map((item) => item.value);
+          const cards = imageList.querySelectorAll('.image-card');
+          cards.forEach((card) => {
+            const checkbox = card.querySelector('input');
+            card.classList.toggle('is-disabled', selectedImagePaths.length >= 3 && !checkbox.checked);
+            checkbox.disabled = selectedImagePaths.length >= 3 && !checkbox.checked;
+          });
+          imageSelectionStatus.textContent = selectedImagePaths.length === 0
+            ? '还没有选择图片，可以直接继续'
+            : selectedImagePaths.length < 3
+              ? `已选 ${selectedImagePaths.length} 张，可再选 ${3 - selectedImagePaths.length} 张`
+              : '已选 3 张，不能再选择更多图片';
+        });
+      });
+      imageNext.disabled = false;
+      imageNext.textContent = '继续填写体验';
+      imageNext.className = 'w-full rounded-2xl bg-pizza-500 px-5 py-4 text-base font-bold text-white shadow-lg shadow-orange-200 transition hover:bg-pizza-600 active:scale-[.99]';
+      imageSelectionStatus.textContent = '还没有选择图片，可以直接继续';
+    }
+
+    async function openImageStep(tag) {
+      imageStep.classList.remove('hidden');
+      detailsStep.classList.add('hidden');
+      imageList.innerHTML = '<div class="col-span-2 flex items-center justify-center py-8 text-sm text-stone-400">正在加载图片…</div>';
+      try {
+        const response = await fetch(`/api/images?tag=${encodeURIComponent(tag)}`);
+        if (!response.ok) throw new Error('图片接口请求失败');
+        const data = await response.json();
+        if (!data.images.length) {
+          imageError.textContent = '图片库正在补充中';
+          imageError.classList.remove('hidden');
+          showDetailsStep();
+          return;
+        }
+        renderImages(data.images);
+      } catch (requestError) {
+        imageList.innerHTML = '';
+        imageError.textContent = '图片暂时加载失败，你也可以直接继续填写体验。';
+        imageError.classList.remove('hidden');
+        imageNext.disabled = false;
+        imageSelectionStatus.textContent = '图片未加载，可以直接继续';
+      }
+    }
+
+    function handleHighlightSelection() {
+      const highlight = form.querySelector('input[name="highlight"]:checked')?.value;
+      q1Step.classList.add('hidden');
+      if (highlight === '产品口味' || highlight === '用餐体验') openImageStep(highlight === '产品口味' ? '口味' : '环境');
+      else showDetailsStep();
+    }
+
+    form.querySelectorAll('input[name="highlight"]').forEach((input) => {
+      input.addEventListener('change', handleHighlightSelection);
+    });
+
+    imageNext.addEventListener('click', () => {
+      if (!selectedImagePaths.length) return;
+      showDetailsStep();
+    });
+
+    const placeholderReview = (highlight, detail, rating) => detail
+      ? `今天来至尊披萨用餐，最让我印象深刻的是${detail}。整体体验挺舒服的，${highlight}也让我觉得很满意。可以感受到店里的细节和用心，吃下来心情很好。下次有机会还会再来，也会推荐给身边喜欢披萨的朋友。`
+      : `今天在至尊披萨吃得挺满意，最喜欢的是${highlight}这一点。整体感觉很舒服，披萨的体验也很符合我的期待，细节做得比较到位。和朋友一起吃饭氛围很好，${rating}星是我真实的感受。下次路过附近还会考虑再来。`;
+
+    const platformLinks = {
+      dianping: { name: '大众点评', icon: '📍', url: 'https://example.com' },
+      meituan: { name: '美团', icon: '🟡', url: '【至尊比萨（洋湖荟聚店）】快来试试这家餐厅吧！ 【地址：岳麓区洋湖街道周家湾社区连塘路367号中海文锦名园D2栋113-2】【电话：15973100191】@美团 http://dpurl.cn/yPzQ94qz' },
+      douyin: { name: '抖音', icon: '♪', url: 'https://example.com' },
+      xiaohongshu: { name: '小红书', icon: '📕', url: 'https://example.com' }
+    };
+
+    function showResult(content) {
+      surveyView.classList.add('hidden');
+      resultView.className = 'fade-in';
+      resultView.innerHTML = content;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showLoading(message = '正在为你生成评价…') {
+      showResult(`<div class="rounded-[28px] bg-white p-10 text-center shadow-warm"><div class="loader mx-auto mb-5"></div><p class="text-base font-bold">${message}</p><p class="mt-2 text-sm text-stone-400">请稍等一下</p></div>`);
+    }
+
+    function showPrivateFeedback() {
+      showResult(`<div class="rounded-[28px] bg-white p-6 shadow-warm sm:p-8"><div class="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-3xl">🫶</div><p class="mb-2 text-sm font-semibold text-pizza-600">我们想认真听听你的感受</p><h2 class="text-2xl font-bold leading-tight">非常抱歉这次体验没有达到你的期待</h2><p class="mt-3 text-sm leading-6 text-stone-500">可以再多告诉我们一些吗？我们会认真改进。</p><form id="private-form" class="mt-6 space-y-4"><textarea required rows="6" placeholder="请告诉我们具体遇到了什么问题……" class="w-full resize-none rounded-2xl border-2 border-stone-100 bg-stone-50 px-4 py-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-pizza-400 focus:bg-white"></textarea><p id="private-error" class="hidden rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600"></p><button class="w-full rounded-2xl bg-pizza-500 px-5 py-4 text-base font-bold text-white shadow-lg shadow-orange-200 transition hover:bg-pizza-600">提交私密反馈</button></form></div>`);
+      document.querySelector('#private-form').addEventListener('submit', async (privateEvent) => {
+        privateEvent.preventDefault();
+        const privateForm = privateEvent.currentTarget;
+        const feedback = privateForm.querySelector('textarea').value.trim();
+        const privateError = privateForm.querySelector('#private-error');
+        const submitButton = privateForm.querySelector('button');
+        submitButton.disabled = true;
+        submitButton.textContent = '正在提交…';
+        try {
+          const response = await fetch('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feedback_content: feedback }) });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || '提交失败');
+          showResult(`<div class="rounded-[28px] bg-white p-8 text-center shadow-warm"><div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-50 text-3xl">✓</div><h2 class="text-2xl font-bold">感谢你的真实反馈！</h2><p class="mt-3 text-sm leading-7 text-stone-500">我们已经收到，店长会认真查看并改进。<br />期待你下次光临至尊披萨 🍕</p></div>`);
+        } catch (submitError) {
+          privateError.textContent = submitError.message;
+          privateError.classList.remove('hidden');
+          submitButton.disabled = false;
+          submitButton.textContent = '提交私密反馈';
+        }
+      });
+    }
+
+    function renderReviewResult(review, imagePaths, highlight, detail, rating) {
+      const selectedImagesMarkup = imagePaths.length ? `<div class="mt-5"><div class="grid grid-cols-2 gap-3">${imagePaths.map((path) => `<img src="${path}" alt="本次体验图片" class="aspect-square w-full rounded-2xl object-cover" />`).join('')}</div><p class="mt-3 text-center text-sm text-stone-500">长按图片可保存到手机相册</p><div class="mt-3 flex flex-wrap items-center justify-center gap-3"><button id="save-images" class="rounded-xl border-2 border-pizza-100 bg-white px-4 py-3 text-sm font-bold text-pizza-700 transition hover:bg-pizza-50">保存图片</button>${/MicroMessenger/i.test(navigator.userAgent) ? '<span class="text-xs text-stone-400">如遇保存失败，请点击右上角菜单选择“在浏览器中打开”后重试</span>' : ''}</div></div>` : '';
+      const platformMarkup = Object.entries(platformLinks).map(([key, platform]) => `<button type="button" data-platform="${key}" class="flex min-w-0 flex-col items-center gap-1 rounded-2xl border border-stone-100 bg-white px-2 py-3 text-xs font-medium text-stone-600 transition hover:border-pizza-300 hover:bg-pizza-50"><span class="text-xl">${platform.icon}</span><span class="truncate">${platform.name}</span></button>`).join('');
+      showResult(`<div class="rounded-[28px] bg-white p-6 shadow-warm sm:p-8"><div class="mb-6 flex items-center gap-3"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-50 text-2xl">✨</div><div><p class="text-sm font-semibold text-green-600">谢谢你的认可</p><h2 class="text-xl font-bold">这是为你准备的体验文案</h2></div></div><div id="review-content" class="rounded-2xl bg-orange-50 p-5 text-[15px] leading-8 text-stone-700">${review}</div>${selectedImagesMarkup}<div class="mt-5 grid gap-3 sm:grid-cols-2"><button id="regenerate" class="rounded-2xl border-2 border-pizza-100 bg-white px-5 py-4 text-sm font-bold text-pizza-700 transition hover:bg-pizza-50">换一版文案</button><button id="copy" class="rounded-2xl bg-pizza-500 px-5 py-4 text-sm font-bold text-white shadow-lg shadow-orange-200 transition hover:bg-pizza-600">一键复制</button></div><div id="copy-success" class="mt-5 hidden rounded-2xl border border-green-100 bg-green-50 p-4 text-sm leading-6 text-green-700">文案已复制好啦～感谢你对至尊披萨的支持！点击下方按钮，去点评平台粘贴发布，你的每一句真实评价，都是我们做得更好的动力 🍕</div><div class="mt-6 border-t border-stone-100 pt-5"><p class="mb-3 text-center text-sm text-stone-500">请先复制文案、保存图片，再点击你常用的平台完成发布</p><div class="grid grid-cols-4 gap-2">${platformMarkup}</div></div></div>`);
+      const reviewBox = resultView.querySelector('#review-content');
+      resultView.querySelector('#copy').addEventListener('click', async () => { await navigator.clipboard?.writeText(reviewBox.textContent); resultView.querySelector('#copy-success').classList.remove('hidden'); });
+      resultView.querySelector('#save-images')?.addEventListener('click', () => imagePaths.forEach((path, index) => setTimeout(() => { const link = document.createElement('a'); link.href = path; link.download = path.split('/').pop() || `pizza-image-${index + 1}`; document.body.appendChild(link); link.click(); link.remove(); }, index * 250)));
+      resultView.querySelectorAll('[data-platform]').forEach((button) => button.addEventListener('click', () => window.open(platformLinks[button.dataset.platform].url, '_blank', 'noopener,noreferrer')));
+      resultView.querySelector('#regenerate').addEventListener('click', async () => {
+        const button = resultView.querySelector('#regenerate');
+        button.disabled = true;
+        button.textContent = '正在换一版…';
+        try {
+          const response = await fetch('/api/generate-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ highlight, detail, rating, selected_image_paths: imagePaths, regenerate: true }) });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || '生成失败');
+          renderReviewResult(data.review, data.selected_image_paths || imagePaths, highlight, detail, rating);
+        } catch (regenerateError) {
+          button.disabled = false;
+          button.textContent = '换一版文案';
+          alert(regenerateError.message);
+        }
+      });
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const highlight = form.querySelector('input[name="highlight"]:checked')?.value;
+      const rating = Number(form.querySelector('input[name="rating"]:checked')?.value);
+      const detail = document.querySelector('#detail').value.trim();
+      error.classList.add('hidden');
+      if (!highlight || !rating) {
+        error.textContent = '请先完成带有 * 的必填项，再提交哦。';
+        error.classList.remove('hidden');
+        return;
+      }
+      showLoading(rating <= 3 ? '正在提交你的反馈…' : '正在为你生成评价…');
+      try {
+        const response = await fetch('/api/generate-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ highlight, detail, rating, selected_image_paths: selectedImagePaths }) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || '提交失败');
+        if (data.branch === 'private-feedback') showPrivateFeedback();
+        else renderReviewResult(data.review, data.selected_image_paths || selectedImagePaths, highlight, detail, rating);
+      } catch (submitError) {
+        showResult(`<div class="rounded-[28px] bg-white p-8 text-center shadow-warm"><div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-3xl">!</div><h2 class="text-xl font-bold">暂时无法提交</h2><p class="mt-3 text-sm leading-7 text-stone-500">${submitError.message}</p><button onclick="location.reload()" class="mt-5 rounded-2xl bg-pizza-500 px-5 py-3 font-bold text-white">返回重试</button></div>`);
+      }
+    });
+  </script>
+</body>
+</html>
