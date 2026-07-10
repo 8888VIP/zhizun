@@ -40,15 +40,15 @@ npm start
 | --- | --- |
 | `DEEPSEEK_API_KEY` | DeepSeek 文案生成服务密钥 |
 | `ADMIN_PASSWORD` | `/admin` 管理后台登录密码 |
-| `DB_PATH` | SQLite 数据库绝对路径，例如 `/data/database.db` |
+| `DB_PATH` | SQLite 数据库绝对路径，例如 `/app/data/database.db` |
 
-为 Railway 服务添加一个 Volume，并将其挂载到 `/data`。然后将 `DB_PATH` 设为 `/data/database.db`。
+为 Railway 服务添加一个 Volume，并将其挂载到 `/app/data`。然后将 `DB_PATH` 设为 `/app/data/database.db`。
 
 数据库文件和图片目录会自动位于同一个持久化目录中：
 
 ```text
-/data/database.db
-/data/images/
+/app/data/database.db
+/app/data/images/
 ```
 
 这样 Railway 重新部署或重启后，SQLite 数据库和上传图片都不会丢失。
