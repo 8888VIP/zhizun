@@ -151,9 +151,20 @@ app.get('/api/images', async (request, response) => {
   }
   try {
     await dbReady;
-    const images = await all(`SELECT id, image_path, tag, status, last_used_at
+    await run(`UPDATE images SET status = 'available', last_used_at = NULL
+      WHERE status = 'cooling' AND last_used_at IS NOT NULL
+      AND datetime(last_used_at) <= datetime('now', '-14 days')`);
+
+    const availableImages = await all(`SELECT id, image_path, tag, status, last_used_at
       FROM images WHERE tag = ? AND status = 'available' ORDER BY RANDOM() LIMIT 6`, [tag]);
-    response.json({ tag, images });
+    const remaining = 6 - availableImages.length;
+    const coolingImages = remaining > 0
+      ? await all(`SELECT id, image_path, tag, status, last_used_at
+          FROM images WHERE tag = ? AND status = 'cooling'
+          ORDER BY datetime(last_used_at) ASC LIMIT ?`, [tag, remaining])
+      : [];
+    const images = [...availableImages, ...coolingImages];
+    response.json({ tag, images, reused_count: coolingImages.length });
   } catch (error) {
     console.error('读取图片列表失败:', error.message);
     response.status(500).json({ error: '读取图片列表失败' });
@@ -231,16 +242,16 @@ app.post('/api/generate-review', async (request, response) => {
 
     if (imagePaths.length) {
       const placeholders = imagePaths.map(() => '?').join(',');
-      const available = await all(`SELECT image_path FROM images WHERE status = 'available' AND image_path IN (${placeholders})`, imagePaths);
-      if (available.length !== imagePaths.length) {
-        response.status(409).json({ error: '部分图片已被其他顾客选用，请返回重新选择' });
+      const existingImages = await all(`SELECT image_path FROM images WHERE image_path IN (${placeholders})`, imagePaths);
+      if (existingImages.length !== imagePaths.length) {
+        response.status(400).json({ error: '所选图片无效，请返回重新选择' });
         return;
       }
     }
 
     const now = new Date().toISOString();
     for (const imagePath of imagePaths) {
-      await run(`UPDATE images SET status = 'cooling', last_used_at = ? WHERE image_path = ? AND status = 'available'`, [now, imagePath]);
+      await run(`UPDATE images SET status = 'cooling', last_used_at = ? WHERE image_path = ?`, [now, imagePath]);
     }
     const reviewRecord = await run(`INSERT INTO reviews (highlight, detail, rating, generated_content, selected_image_paths) VALUES (?, ?, ?, ?, ?)`, [
       highlight, String(detail).trim(), numericRating, content, JSON.stringify(imagePaths)
