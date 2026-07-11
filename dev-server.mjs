@@ -145,8 +145,8 @@ app.post('/api/admin/upload-image', requireAdmin, upload.array('images', 10), as
 
 app.get('/api/images', async (request, response) => {
   const { tag } = request.query;
-  if (!['口味', '环境'].includes(tag)) {
-    response.status(400).json({ error: 'tag 必须是“口味”或“环境”' });
+  if (!['口味', '环境', '全部'].includes(tag)) {
+    response.status(400).json({ error: 'tag 必须是“口味”“环境”或“全部”' });
     return;
   }
   try {
@@ -155,16 +155,22 @@ app.get('/api/images', async (request, response) => {
       WHERE status = 'cooling' AND last_used_at IS NOT NULL
       AND datetime(last_used_at) <= datetime('now', '-14 days')`);
 
-    const availableImages = await all(`SELECT id, image_path, tag, status, last_used_at
-      FROM images WHERE tag = ? AND status = 'available' ORDER BY RANDOM() LIMIT 6`, [tag]);
-    const remaining = 6 - availableImages.length;
-    const coolingImages = remaining > 0
-      ? await all(`SELECT id, image_path, tag, status, last_used_at
-          FROM images WHERE tag = ? AND status = 'cooling'
-          ORDER BY datetime(last_used_at) ASC LIMIT ?`, [tag, remaining])
-      : [];
-    const images = [...availableImages, ...coolingImages];
-    response.json({ tag, images, reused_count: coolingImages.length });
+    const primaryWhere = tag === '全部' ? '' : 'WHERE tag = ?';
+    const primaryParams = tag === '全部' ? [] : [tag];
+    const primaryImages = await all(`SELECT id, image_path, tag, status, last_used_at FROM images ${primaryWhere}`, primaryParams);
+    const fallbackImages = tag === '全部' ? [] : await all(`SELECT id, image_path, tag, status, last_used_at FROM images WHERE tag != ?`, [tag]);
+    const randomize = (items) => [...items].sort(() => Math.random() - 0.5);
+    const byStatus = (items, status) => items.filter((item) => item.status === status);
+    const oldestFirst = (items) => [...items].sort((a, b) => String(a.last_used_at || '').localeCompare(String(b.last_used_at || '')));
+
+    const selected = [
+      ...randomize(byStatus(primaryImages, 'available')),
+      ...randomize(byStatus(fallbackImages, 'available')),
+      ...oldestFirst(byStatus(primaryImages, 'cooling')),
+      ...oldestFirst(byStatus(fallbackImages, 'cooling'))
+    ].slice(0, 6);
+    const reusedCount = selected.filter((item) => item.status === 'cooling').length;
+    response.json({ tag, images: selected, reused_count: reusedCount });
   } catch (error) {
     console.error('读取图片列表失败:', error.message);
     response.status(500).json({ error: '读取图片列表失败' });

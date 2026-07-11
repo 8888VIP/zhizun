@@ -189,8 +189,8 @@
     function handleHighlightSelection() {
       const highlight = form.querySelector('input[name="highlight"]:checked')?.value;
       q1Step.classList.add('hidden');
-      if (highlight === '产品口味' || highlight === '用餐体验') openImageStep(highlight === '产品口味' ? '口味' : '环境');
-      else showDetailsStep();
+      const imageTag = highlight === '产品口味' ? '口味' : highlight === '用餐体验' ? '环境' : '全部';
+      openImageStep(imageTag);
     }
 
     form.querySelectorAll('input[name="highlight"]').forEach((input) => {
